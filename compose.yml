@@ -45,9 +45,6 @@ services:
       # without any extra volume configuration.
       - ./agent_home:/home/user
 
-      # Neutral drop-zone for moving files in/out of the container.
-      - ./share:/share
-
     # ── Network ──────────────────────────────────────────────────────────────
 
     # Default: Podman creates an isolated per-project network (slirp4netns /
