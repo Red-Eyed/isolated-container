@@ -58,3 +58,4 @@ services:
     stdin_open: true
     tty: true
     restart: "no"
+    command: ["sleep", "infinity"]
