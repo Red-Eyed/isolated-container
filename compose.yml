@@ -1,0 +1,63 @@
+services:
+  agent:
+    build:
+      context: .
+      # Bake your real UID/GID into the image so the container user matches the
+      # host user — required for bind-mount ownership with rootless Podman.
+      # The justfile automatically passes HOST_UID and HOST_GID.
+      args:
+        UID: "${HOST_UID:-1000}"
+        GID: "${HOST_GID:-1000}"
+
+    # ── Rootless Podman ───────────────────────────────────────────────────────
+
+    # Maps the host user's UID/GID to the same values inside the container.
+    # This is what makes bind-mounted directories (agent_home, share) readable
+    # and writable without any chown/chmod on the host side.
+    # Docker users: remove this line (Docker does not support keep-id).
+    userns_mode: keep-id
+
+    # ── Security hardening ────────────────────────────────────────────────────
+
+    # Drop every Linux capability; add back only what you genuinely need.
+    cap_drop:
+      - ALL
+
+    # Root filesystem is read-only.  Only the two bind-mounts below are
+    # writable at runtime.
+    read_only: true
+
+    # Processes cannot gain new privileges via setuid/setgid bits.
+    security_opt:
+      - no-new-privileges:true
+
+    # Writable tmpfs for directories that system tools expect to be writable.
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+      - /var/tmp:size=64m,mode=1777
+      - /run:size=64m,mode=755
+
+    # ── Persistence & file exchange ───────────────────────────────────────────
+
+    volumes:
+      # The agent's entire home directory lives on the host.
+      # npm/pip/cargo/etc. caches and configs all persist here automatically
+      # without any extra volume configuration.
+      - ./agent_home:/home/user
+
+      # Neutral drop-zone for moving files in/out of the container.
+      - ./share:/share
+
+    # ── Network ──────────────────────────────────────────────────────────────
+
+    # Default: Podman creates an isolated per-project network (slirp4netns /
+    # pasta for rootless).  No host-network sharing.
+    # Expose individual ports explicitly if needed:
+    #   ports:
+    #     - "127.0.0.1:3000:3000"
+
+    # ── Runtime ──────────────────────────────────────────────────────────────
+
+    stdin_open: true
+    tty: true
+    restart: "no"

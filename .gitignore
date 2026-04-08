@@ -1,0 +1,10 @@
+# Agent's persistent home — contains credentials, caches, and personal config.
+# Never commit this; it is created automatically on first run.
+agent_home/
+
+# File-exchange directory — treat as a scratch area, not source control.
+share/
+
+# Environment override files
+.env
+*.env
